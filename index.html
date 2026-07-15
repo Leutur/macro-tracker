@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Macro Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0E1117;
+    --panel: #161B25;
+    --panel-2: #1D2432;
+    --line: #2A3140;
+    --text: #E7EBF2;
+    --text-dim: #8792A3;
+    --cal: #4FE0C7;
+    --cal-dim: #163B37;
+    --protein: #F0637A;
+    --protein-dim: #3A1E24;
+    --carbs: #F5B942;
+    --carbs-dim: #3A2F14;
+    --fat: #8E8CF0;
+    --fat-dim: #232251;
+    --danger: #F0637A;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:20px 14px 60px;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:640px;margin:0 auto;width:100%;}
+  .hud-header{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:14px;
+  }
+  .hud-title{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:26px;
+    letter-spacing:2px;color:var(--cal);text-transform:uppercase;
+  }
+  .hud-title span{color:var(--text);}
+  .hud-date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);}
+  .gear{
+    background:none;border:1px solid var(--line);color:var(--text-dim);
+    border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;
+    font-family:'Inter',sans-serif;
+  }
+  .gear:hover{border-color:var(--cal);color:var(--cal);}
+
+  .core-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 20px;margin-bottom:16px;display:flex;align-items:center;gap:24px;
+  }
+  .ring-box{position:relative;width:132px;height:132px;flex-shrink:0;}
+  .ring-box svg{transform:rotate(-90deg);}
+  .ring-label{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .ring-kcal{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--cal);}
+  .ring-sub{font-size:11px;color:var(--text-dim);margin-top:2px;letter-spacing:0.5px;}
+
+  .core-info{flex:1;}
+  .core-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-dim);margin-bottom:4px;}
+  .core-row b{color:var(--text);font-family:'JetBrains Mono',monospace;}
+  .core-remaining{
+    font-family:'Rajdhani',sans-serif;font-weight:600;font-size:15px;
+    letter-spacing:1px;margin-top:8px;text-transform:uppercase;
+  }
+  .core-remaining.over{color:var(--protein);}
+  .core-remaining.under{color:var(--cal);}
+
+  .macro-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin-bottom:16px;
+  }
+  .macro-row{margin-bottom:14px;}
+  .macro-row:last-child{margin-bottom:0;}
+  .macro-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;
+    font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  .macro-top .val{font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:0;color:var(--text-dim);text-transform:none;}
+  .bar-track{height:8px;border-radius:4px;background:var(--panel-2);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;transition:width 0.3s ease;}
+  .protein-label{color:var(--protein);}
+  .carbs-label{color:var(--carbs);}
+  .fat-label{color:var(--fat);}
+  .protein-fill{background:var(--protein);}
+  .carbs-fill{background:var(--carbs);}
+  .fat-fill{background:var(--fat);}
+
+  .add-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin-bottom:16px;
+  }
+  .add-title{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;
+  }
+  .add-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+  .add-grid label{font-size:10px;color:var(--text-dim);display:block;margin-bottom:4px;letter-spacing:0.5px;text-transform:uppercase;}
+  .add-grid input{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:6px;padding:10px 8px;font-size:16px;font-family:'JetBrains Mono',monospace;
+    min-height:40px;
+  }
+  .add-grid input:focus{outline:none;border-color:var(--cal);}
+  .add-btn{
+    width:100%;background:var(--cal-dim);border:1px solid var(--cal);color:var(--cal);
+    border-radius:8px;padding:13px;font-family:'Rajdhani',sans-serif;font-weight:700;
+    letter-spacing:1.5px;text-transform:uppercase;font-size:14px;cursor:pointer;
+    min-height:46px;
+  }
+  .add-btn:hover{background:var(--cal);color:#0E1117;}
+
+  .log-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;
+  }
+  .log-title{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .log-count{font-family:'JetBrains Mono',monospace;color:var(--text-dim);font-weight:400;letter-spacing:0;text-transform:none;font-size:12px;}
+  .log-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0;border-bottom:1px solid var(--line);gap:10px;
+  }
+  .log-item:last-child{border-bottom:none;}
+  .log-name{font-size:13px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .log-macros{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);
+    display:flex;gap:8px;flex-shrink:0;
+  }
+  .log-macros .p{color:var(--protein);}
+  .log-macros .c{color:var(--carbs);}
+  .log-macros .f{color:var(--fat);}
+  .log-kcal{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--cal);min-width:52px;text-align:right;}
+  .del-btn{
+    background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;
+    padding:2px 6px;line-height:1;
+  }
+  .del-btn:hover{color:var(--danger);}
+  .empty-log{color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;font-style:italic;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+    align-items:center;justify-content:center;z-index:100;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px;width:280px;
+  }
+  .modal-title{
+    font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--cal);margin-bottom:16px;
+  }
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
+  .modal-field input{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:6px;padding:8px;font-family:'JetBrains Mono',monospace;font-size:13px;
+  }
+  .modal-btns{display:flex;gap:8px;margin-top:16px;}
+  .modal-btns button{
+    flex:1;border-radius:8px;padding:9px;font-family:'Rajdhani',sans-serif;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;font-size:12px;cursor:pointer;
+  }
+  .save-btn{background:var(--cal);border:1px solid var(--cal);color:#0E1117;}
+  .cancel-btn{background:none;border:1px solid var(--line);color:var(--text-dim);}
+
+  .status-msg{
+    text-align:center;color:var(--text-dim);font-size:12px;padding:20px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  @media (max-width:520px){
+    .hud-title{font-size:22px;}
+    .add-grid{grid-template-columns:1fr 1fr;}
+    .add-grid > div:first-child{grid-column:1 / -1;}
+    .core-panel{flex-direction:column;text-align:center;padding:20px 16px;}
+    .ring-box{width:116px;height:116px;}
+    .ring-box svg{width:116px;height:116px;}
+    .core-info{width:100%;}
+    .core-row{justify-content:center;gap:8px;}
+    .log-item{flex-wrap:wrap;}
+    .log-macros{order:3;width:100%;justify-content:flex-start;margin-top:2px;}
+    .del-btn{min-width:32px;min-height:32px;font-size:20px;}
+    .modal{width:min(280px, 90vw);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hud-header">
+    <div>
+      <div class="hud-title">MY RUTUEL <span>// MACRO TRACKER</span></div>
+      <div class="hud-date" id="dateLabel">—</div>
+    </div>
+    <button class="gear" id="settingsBtn">GOALS</button>
+  </div>
+
+  <div class="core-panel">
+    <div class="ring-box">
+      <svg width="132" height="132" viewBox="0 0 132 132">
+        <circle cx="66" cy="66" r="56" fill="none" stroke="#1D2432" stroke-width="10"/>
+        <circle id="ringFill" cx="66" cy="66" r="56" fill="none" stroke="#4FE0C7" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+      </svg>
+      <div class="ring-label">
+        <div class="ring-kcal" id="kcalTotal">0</div>
+        <div class="ring-sub" id="kcalGoalLabel">/ 2000 KCAL</div>
+      </div>
+    </div>
+    <div class="core-info">
+      <div class="core-row"><span>Logged today</span><b id="kcalTotal2">0 kcal</b></div>
+      <div class="core-row"><span>Daily goal</span><b id="kcalGoal2">2000 kcal</b></div>
+      <div class="core-remaining" id="remainingLabel">0 KCAL REMAINING</div>
+    </div>
+  </div>
+
+  <div class="macro-panel">
+    <div class="macro-row">
+      <div class="macro-top"><span class="protein-label">Protein</span><span class="val" id="proteinVal">0 / 150g</span></div>
+      <div class="bar-track"><div class="bar-fill protein-fill" id="proteinBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-top"><span class="carbs-label">Carbs</span><span class="val" id="carbsVal">0 / 220g</span></div>
+      <div class="bar-track"><div class="bar-fill carbs-fill" id="carbsBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro-top"><span class="fat-label">Fat</span><span class="val" id="fatVal">0 / 70g</span></div>
+      <div class="bar-track"><div class="bar-fill fat-fill" id="fatBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="add-panel">
+    <div class="add-title">Log food</div>
+    <div class="add-grid">
+      <div><label>Food name</label><input type="text" id="fName" placeholder="Chicken breast"></div>
+      <div><label>Kcal</label><input type="number" id="fKcal" placeholder="0" min="0"></div>
+      <div><label>Protein g</label><input type="number" id="fProtein" placeholder="0" min="0"></div>
+      <div><label>Carbs g</label><input type="number" id="fCarbs" placeholder="0" min="0"></div>
+      <div><label>Fat g</label><input type="number" id="fFat" placeholder="0" min="0"></div>
+    </div>
+    <button class="add-btn" id="addBtn">+ Add to log</button>
+  </div>
+
+  <div class="log-panel">
+    <div class="log-title"><span>Today's log</span><span class="log-count" id="logCount">0 items</span></div>
+    <div id="logList"><div class="empty-log">No food logged yet. Add your first meal above.</div></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Set daily goals</div>
+    <div class="modal-field"><label>Calories (kcal)</label><input type="number" id="gKcal"></div>
+    <div class="modal-field"><label>Protein (g)</label><input type="number" id="gProtein"></div>
+    <div class="modal-field"><label>Carbs (g)</label><input type="number" id="gCarbs"></div>
+    <div class="modal-field"><label>Fat (g)</label><input type="number" id="gFat"></div>
+    <div class="modal-btns">
+      <button class="cancel-btn" id="cancelBtn">Cancel</button>
+      <button class="save-btn" id="saveGoalsBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const RING_CIRC = 351.86;
+let goals = { kcal: 2000, protein: 150, carbs: 220, fat: 70 };
+let todayLog = [];
+
+function todayKey(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDate(){
+  const d = new Date();
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }).toUpperCase();
+}
+
+function loadData(){
+  document.getElementById('dateLabel').textContent = fmtDate();
+  try{
+    const g = localStorage.getItem('goals');
+    if(g){ goals = JSON.parse(g); }
+  }catch(e){ /* no goals saved yet, use defaults */ }
+
+  try{
+    const l = localStorage.getItem('foodlog:' + todayKey());
+    if(l){ todayLog = JSON.parse(l); }
+  }catch(e){ todayLog = []; }
+
+  render();
+}
+
+function saveLog(){
+  try{
+    localStorage.setItem('foodlog:' + todayKey(), JSON.stringify(todayLog));
+  }catch(e){ console.error('Could not save log', e); }
+}
+
+function saveGoals(){
+  try{
+    localStorage.setItem('goals', JSON.stringify(goals));
+  }catch(e){ console.error('Could not save goals', e); }
+}
+
+function render(){
+  const totals = todayLog.reduce((acc, item) => {
+    acc.kcal += item.kcal; acc.protein += item.protein; acc.carbs += item.carbs; acc.fat += item.fat;
+    return acc;
+  }, {kcal:0, protein:0, carbs:0, fat:0});
+
+  document.getElementById('kcalTotal').textContent = Math.round(totals.kcal);
+  document.getElementById('kcalGoalLabel').textContent = '/ ' + goals.kcal + ' KCAL';
+  document.getElementById('kcalTotal2').textContent = Math.round(totals.kcal) + ' kcal';
+  document.getElementById('kcalGoal2').textContent = goals.kcal + ' kcal';
+
+  const remaining = goals.kcal - totals.kcal;
+  const remLabel = document.getElementById('remainingLabel');
+  if(remaining >= 0){
+    remLabel.textContent = Math.round(remaining) + ' KCAL REMAINING';
+    remLabel.className = 'core-remaining under';
+  } else {
+    remLabel.textContent = Math.round(Math.abs(remaining)) + ' KCAL OVER';
+    remLabel.className = 'core-remaining over';
+  }
+
+  const pct = Math.min(totals.kcal / goals.kcal, 1);
+  const offset = RING_CIRC - (pct * RING_CIRC);
+  const ring = document.getElementById('ringFill');
+  ring.setAttribute('stroke-dashoffset', offset);
+  ring.setAttribute('stroke', totals.kcal > goals.kcal ? '#F0637A' : '#4FE0C7');
+
+  setBar('protein', totals.protein, goals.protein);
+  setBar('carbs', totals.carbs, goals.carbs);
+  setBar('fat', totals.fat, goals.fat);
+
+  const logList = document.getElementById('logList');
+  document.getElementById('logCount').textContent = todayLog.length + ' item' + (todayLog.length===1?'':'s');
+  if(todayLog.length === 0){
+    logList.innerHTML = '<div class="empty-log">No food logged yet. Add your first meal above.</div>';
+  } else {
+    logList.innerHTML = todayLog.map((item, idx) => `
+      <div class="log-item">
+        <span class="log-name">${escapeHtml(item.name)}</span>
+        <span class="log-macros"><span class="p">P${Math.round(item.protein)}</span><span class="c">C${Math.round(item.carbs)}</span><span class="f">F${Math.round(item.fat)}</span></span>
+        <span class="log-kcal">${Math.round(item.kcal)}</span>
+        <button class="del-btn" data-idx="${idx}" aria-label="Delete entry">&times;</button>
+      </div>
+    `).join('');
+    logList.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.getAttribute('data-idx'));
+        todayLog.splice(idx, 1);
+        saveLog();
+        render();
+      });
+    });
+  }
+}
+
+function setBar(key, val, goal){
+  const pct = Math.min((val / goal) * 100, 100);
+  document.getElementById(key + 'Bar').style.width = pct + '%';
+  document.getElementById(key + 'Val').textContent = Math.round(val) + ' / ' + goal + 'g';
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  const name = document.getElementById('fName').value.trim();
+  const kcal = parseFloat(document.getElementById('fKcal').value) || 0;
+  const protein = parseFloat(document.getElementById('fProtein').value) || 0;
+  const carbs = parseFloat(document.getElementById('fCarbs').value) || 0;
+  const fat = parseFloat(document.getElementById('fFat').value) || 0;
+
+  if(!name || kcal <= 0){
+    document.getElementById('fName').style.borderColor = '#F0637A';
+    setTimeout(() => { document.getElementById('fName').style.borderColor = ''; }, 1200);
+    return;
+  }
+
+  todayLog.push({ name, kcal, protein, carbs, fat, time: Date.now() });
+  saveLog();
+  render();
+
+  document.getElementById('fName').value = '';
+  document.getElementById('fKcal').value = '';
+  document.getElementById('fProtein').value = '';
+  document.getElementById('fCarbs').value = '';
+  document.getElementById('fFat').value = '';
+  document.getElementById('fName').focus();
+});
+
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('gKcal').value = goals.kcal;
+  document.getElementById('gProtein').value = goals.protein;
+  document.getElementById('gCarbs').value = goals.carbs;
+  document.getElementById('gFat').value = goals.fat;
+  document.getElementById('modalOverlay').classList.add('show');
+});
+
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('show');
+});
+
+document.getElementById('saveGoalsBtn').addEventListener('click', () => {
+  goals = {
+    kcal: parseFloat(document.getElementById('gKcal').value) || goals.kcal,
+    protein: parseFloat(document.getElementById('gProtein').value) || goals.protein,
+    carbs: parseFloat(document.getElementById('gCarbs').value) || goals.carbs,
+    fat: parseFloat(document.getElementById('gFat').value) || goals.fat,
+  };
+  saveGoals();
+  render();
+  document.getElementById('modalOverlay').classList.remove('show');
+});
+
+loadData();
+</script>
+</body>
+</html>
