@@ -272,30 +272,30 @@ function fmtDate(){
   return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }).toUpperCase();
 }
 
-async function loadData(){
+function loadData(){
   document.getElementById('dateLabel').textContent = fmtDate();
   try{
-    const g = await window.storage.get('goals', false);
-    if(g && g.value){ goals = JSON.parse(g.value); }
+    const g = localStorage.getItem('goals');
+    if(g){ goals = JSON.parse(g); }
   }catch(e){ /* no goals saved yet, use defaults */ }
 
   try{
-    const l = await window.storage.get('foodlog:' + todayKey(), false);
-    if(l && l.value){ todayLog = JSON.parse(l.value); }
+    const l = localStorage.getItem('foodlog:' + todayKey());
+    if(l){ todayLog = JSON.parse(l); }
   }catch(e){ todayLog = []; }
 
   render();
 }
 
-async function saveLog(){
+function saveLog(){
   try{
-    await window.storage.set('foodlog:' + todayKey(), JSON.stringify(todayLog), false);
+    localStorage.setItem('foodlog:' + todayKey(), JSON.stringify(todayLog));
   }catch(e){ console.error('Could not save log', e); }
 }
 
-async function saveGoals(){
+function saveGoals(){
   try{
-    await window.storage.set('goals', JSON.stringify(goals), false);
+    localStorage.setItem('goals', JSON.stringify(goals));
   }catch(e){ console.error('Could not save goals', e); }
 }
 
